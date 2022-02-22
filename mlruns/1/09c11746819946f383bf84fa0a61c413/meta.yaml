@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/keith/code/keith-taylor/TaxiFareModel/mlruns/1/09c11746819946f383bf84fa0a61c413/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: 09c11746819946f383bf84fa0a61c413
+run_uuid: 09c11746819946f383bf84fa0a61c413
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1645547217555
+status: 1
+tags: []
+user_id: unknown

@@ -7,8 +7,15 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LinearRegression
+import mlflow
+from mlflow.tracking import MlflowClient
+from memoized_property import memoized_property
 import numpy as np
 import pandas as pd
+
+MLFLOW_URI = "https://mlflow.lewagon.co/"
+
+EXPERIMENT_NAME = "[UK] [Lon] [keith-taylor] taxi_fare V0.1"
 
 class Trainer():
     def __init__(self, X, y):
@@ -19,6 +26,7 @@ class Trainer():
         self.pipeline = None
         self.X = X
         self.y = y
+        self.experiment_name = EXPERIMENT_NAME
 
     def set_pipeline(self):
         """defines the pipeline as a class attribute"""
@@ -50,13 +58,42 @@ class Trainer():
         # train the pipelined model
         self.pipe.fit(self.X, self.y)
 
+        self.mlflow_log_param('model', 'linear')
 
 
     def evaluate(self, X_test, y_test):
         """evaluates the pipeline on df_test and return the RMSE"""
         # compute y_pred on the test set
         y_pred = self.pipe.predict(X_test)
-        return np.sqrt(((y_pred - y_test)**2).mean())
+        loss_measure = np.sqrt(((y_pred - y_test)**2).mean())
+        self.mlflow_log_metric('RMSE', loss_measure)
+        return loss_measure
+
+    @memoized_property
+    def mlflow_client(self):
+        mlflow.set_tracking_uri(MLFLOW_URI)
+        return MlflowClient()
+
+    @memoized_property
+    def mlflow_experiment_id(self):
+        try:
+            return self.mlflow_client.create_experiment(self.experiment_name)
+        except BaseException:
+            return self.mlflow_client.get_experiment_by_name(
+                self.experiment_name).experiment_id
+
+    @memoized_property
+    def mlflow_run(self):
+        return self.mlflow_client.create_run(self.mlflow_experiment_id)
+
+    def mlflow_log_param(self, key, value):
+        self.mlflow_client.log_param(self.mlflow_run.info.run_id, key, value)
+
+    def mlflow_log_metric(self, key, value):
+        self.mlflow_client.log_metric(self.mlflow_run.info.run_id, key, value)
+
+
+
 
 if __name__ == "__main__":
     df = get_data()
